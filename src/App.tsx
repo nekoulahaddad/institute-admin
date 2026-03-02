@@ -169,13 +169,11 @@ function App() {
   const [activeStatus, setActiveStatus] = useState<UserStatus>('pending');
   const [users, setUsers] = useState<User[]>([]);
   const [scopedUsers, setScopedUsers] = useState<User[]>([]);
-  const [analyticsSourceUsers, setAnalyticsSourceUsers] = useState<User[]>([]);
   const [messageDrafts, setMessageDrafts] = useState<Record<string, string>>({});
   const [search, setSearch] = useState('');
   const [selectedBranchId, setSelectedBranchId] = useState('');
   const [analyticsBranchId, setAnalyticsBranchId] = useState('');
-  const [selectedLanguage, setSelectedLanguage] = useState('');
-  const [selectedLevel, setSelectedLevel] = useState('');
+  const [analyticsRole, setAnalyticsRole] = useState('');
   const [selectedUserId, setSelectedUserId] = useState('');
   const [year, setYear] = useState(defaultYear);
   const [month, setMonth] = useState(defaultMonth);
@@ -219,27 +217,6 @@ function App() {
     [scopedUsers],
   );
 
-  const languageOptions = useMemo(() => {
-    const unique = new Set<string>();
-    analyticsSourceUsers.forEach((user) => {
-      (user.languages || []).forEach((item) => {
-        if (item.language) unique.add(item.language);
-      });
-    });
-    return Array.from(unique).sort((a, b) => a.localeCompare(b));
-  }, [analyticsSourceUsers]);
-
-  const levelOptions = useMemo(() => {
-    const unique = new Set<string>();
-    analyticsSourceUsers.forEach((user) => {
-      (user.languages || []).forEach((item) => {
-        if (selectedLanguage && item.language !== selectedLanguage) return;
-        if (item.level) unique.add(item.level);
-      });
-    });
-    return Array.from(unique).sort((a, b) => a.localeCompare(b));
-  }, [analyticsSourceUsers, selectedLanguage]);
-
   const loadUsersByStatus = useCallback(async () => {
     if (!token || !currentUser) return;
     const params = new URLSearchParams();
@@ -257,24 +234,12 @@ function App() {
     const params = new URLSearchParams();
     const scopedBranch = getAnalyticsBranchId();
     if (scopedBranch) params.set('branchId', scopedBranch);
-    if (selectedLanguage) params.set('language', selectedLanguage);
-    if (selectedLevel) params.set('level', selectedLevel);
+    if (analyticsRole) params.set('role', analyticsRole);
 
     const data = await apiRequest<User[]>(`users?${params.toString()}`, undefined, token);
     const filtered = data.filter((user) => user._id !== currentUser._id);
     setScopedUsers(filtered);
-  }, [currentUser, getAnalyticsBranchId, selectedLanguage, selectedLevel, token]);
-
-  const loadAnalyticsSourceUsers = useCallback(async () => {
-    if (!token || !currentUser) return;
-    const params = new URLSearchParams();
-    const scopedBranch = getAnalyticsBranchId();
-    if (scopedBranch) params.set('branchId', scopedBranch);
-
-    const data = await apiRequest<User[]>(`users?${params.toString()}`, undefined, token);
-    const filtered = data.filter((user) => user._id !== currentUser._id);
-    setAnalyticsSourceUsers(filtered);
-  }, [currentUser, getAnalyticsBranchId, token]);
+  }, [analyticsRole, currentUser, getAnalyticsBranchId, token]);
 
   useEffect(() => {
     if (!token || !jwtPayload?.sub) return;
@@ -315,10 +280,6 @@ function App() {
   }, [loadScopedUsers]);
 
   useEffect(() => {
-    loadAnalyticsSourceUsers().catch((error) => setPageError(getErrorMessage(error)));
-  }, [loadAnalyticsSourceUsers]);
-
-  useEffect(() => {
     setMessageDrafts((previous) => {
       const next = { ...previous };
       users.forEach((user) => {
@@ -336,18 +297,6 @@ function App() {
       setSelectedUserId('');
     }
   }, [scopedUsers, selectedUserId]);
-
-  useEffect(() => {
-    if (selectedLanguage && !languageOptions.includes(selectedLanguage)) {
-      setSelectedLanguage('');
-    }
-  }, [languageOptions, selectedLanguage]);
-
-  useEffect(() => {
-    if (selectedLevel && !levelOptions.includes(selectedLevel)) {
-      setSelectedLevel('');
-    }
-  }, [levelOptions, selectedLevel]);
 
   useEffect(() => {
     if (!token) return;
@@ -769,26 +718,15 @@ function App() {
               </select>
             )}
             <select
-              value={selectedLanguage}
-              onChange={(event) => setSelectedLanguage(event.target.value)}
+              value={analyticsRole}
+              onChange={(event) => setAnalyticsRole(event.target.value)}
             >
-              <option value="">كل اللغات</option>
-              {languageOptions.map((language) => (
-                <option key={language} value={language}>
-                  {language}
-                </option>
-              ))}
-            </select>
-            <select
-              value={selectedLevel}
-              onChange={(event) => setSelectedLevel(event.target.value)}
-            >
-              <option value="">كل المستويات</option>
-              {levelOptions.map((level) => (
-                <option key={level} value={level}>
-                  {level}
-                </option>
-              ))}
+              <option value="">كل الادوار</option>
+              <option value="student">{roleLabel.student}</option>
+              <option value="teacher">{roleLabel.teacher}</option>
+              <option value="employee">{roleLabel.employee}</option>
+              <option value="admin">{roleLabel.admin}</option>
+              <option value="super_admin">{roleLabel.super_admin}</option>
             </select>
             <input
               type="number"

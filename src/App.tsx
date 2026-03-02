@@ -10,6 +10,11 @@ type Branch = {
   name: { en: string; ar: string };
 };
 
+type UserLanguage = {
+  language: string;
+  level: string;
+};
+
 type User = {
   _id: string;
   arabicName: string;
@@ -18,6 +23,7 @@ type User = {
   role: UserRole;
   status: UserStatus;
   branchId: string | Branch;
+  languages?: UserLanguage[];
   adminMessage?: string | null;
 };
 
@@ -163,9 +169,13 @@ function App() {
   const [activeStatus, setActiveStatus] = useState<UserStatus>('pending');
   const [users, setUsers] = useState<User[]>([]);
   const [scopedUsers, setScopedUsers] = useState<User[]>([]);
+  const [analyticsSourceUsers, setAnalyticsSourceUsers] = useState<User[]>([]);
   const [messageDrafts, setMessageDrafts] = useState<Record<string, string>>({});
   const [search, setSearch] = useState('');
   const [selectedBranchId, setSelectedBranchId] = useState('');
+  const [analyticsBranchId, setAnalyticsBranchId] = useState('');
+  const [selectedLanguage, setSelectedLanguage] = useState('');
+  const [selectedLevel, setSelectedLevel] = useState('');
   const [selectedUserId, setSelectedUserId] = useState('');
   const [year, setYear] = useState(defaultYear);
   const [month, setMonth] = useState(defaultMonth);
@@ -185,6 +195,12 @@ function App() {
     return selectedBranchId;
   }, [currentUser, selectedBranchId]);
 
+  const getAnalyticsBranchId = useCallback((): string => {
+    if (!currentUser) return analyticsBranchId;
+    if (currentUser.role === 'admin') return getBranchId(currentUser);
+    return analyticsBranchId;
+  }, [analyticsBranchId, currentUser]);
+
   const branchNameById = useMemo(
     () =>
       branches.reduce<Record<string, string>>((acc, branch) => {
@@ -203,6 +219,27 @@ function App() {
     [scopedUsers],
   );
 
+  const languageOptions = useMemo(() => {
+    const unique = new Set<string>();
+    analyticsSourceUsers.forEach((user) => {
+      (user.languages || []).forEach((item) => {
+        if (item.language) unique.add(item.language);
+      });
+    });
+    return Array.from(unique).sort((a, b) => a.localeCompare(b));
+  }, [analyticsSourceUsers]);
+
+  const levelOptions = useMemo(() => {
+    const unique = new Set<string>();
+    analyticsSourceUsers.forEach((user) => {
+      (user.languages || []).forEach((item) => {
+        if (selectedLanguage && item.language !== selectedLanguage) return;
+        if (item.level) unique.add(item.level);
+      });
+    });
+    return Array.from(unique).sort((a, b) => a.localeCompare(b));
+  }, [analyticsSourceUsers, selectedLanguage]);
+
   const loadUsersByStatus = useCallback(async () => {
     if (!token || !currentUser) return;
     const params = new URLSearchParams();
@@ -218,13 +255,26 @@ function App() {
   const loadScopedUsers = useCallback(async () => {
     if (!token || !currentUser) return;
     const params = new URLSearchParams();
-    const scopedBranch = getScopedBranchId();
+    const scopedBranch = getAnalyticsBranchId();
     if (scopedBranch) params.set('branchId', scopedBranch);
+    if (selectedLanguage) params.set('language', selectedLanguage);
+    if (selectedLevel) params.set('level', selectedLevel);
 
     const data = await apiRequest<User[]>(`users?${params.toString()}`, undefined, token);
     const filtered = data.filter((user) => user._id !== currentUser._id);
     setScopedUsers(filtered);
-  }, [currentUser, getScopedBranchId, token]);
+  }, [currentUser, getAnalyticsBranchId, selectedLanguage, selectedLevel, token]);
+
+  const loadAnalyticsSourceUsers = useCallback(async () => {
+    if (!token || !currentUser) return;
+    const params = new URLSearchParams();
+    const scopedBranch = getAnalyticsBranchId();
+    if (scopedBranch) params.set('branchId', scopedBranch);
+
+    const data = await apiRequest<User[]>(`users?${params.toString()}`, undefined, token);
+    const filtered = data.filter((user) => user._id !== currentUser._id);
+    setAnalyticsSourceUsers(filtered);
+  }, [currentUser, getAnalyticsBranchId, token]);
 
   useEffect(() => {
     if (!token || !jwtPayload?.sub) return;
@@ -239,9 +289,12 @@ function App() {
         setCurrentUser(me);
         setBranches(branchList);
         if (me.role === 'admin') {
-          setSelectedBranchId(getBranchId(me));
+          const myBranchId = getBranchId(me);
+          setSelectedBranchId(myBranchId);
+          setAnalyticsBranchId(myBranchId);
         } else {
           setSelectedBranchId('');
+          setAnalyticsBranchId('');
         }
       })
       .catch((error) => {
@@ -262,6 +315,10 @@ function App() {
   }, [loadScopedUsers]);
 
   useEffect(() => {
+    loadAnalyticsSourceUsers().catch((error) => setPageError(getErrorMessage(error)));
+  }, [loadAnalyticsSourceUsers]);
+
+  useEffect(() => {
     setMessageDrafts((previous) => {
       const next = { ...previous };
       users.forEach((user) => {
@@ -279,6 +336,18 @@ function App() {
       setSelectedUserId('');
     }
   }, [scopedUsers, selectedUserId]);
+
+  useEffect(() => {
+    if (selectedLanguage && !languageOptions.includes(selectedLanguage)) {
+      setSelectedLanguage('');
+    }
+  }, [languageOptions, selectedLanguage]);
+
+  useEffect(() => {
+    if (selectedLevel && !levelOptions.includes(selectedLevel)) {
+      setSelectedLevel('');
+    }
+  }, [levelOptions, selectedLevel]);
 
   useEffect(() => {
     if (!token) return;
@@ -596,6 +665,7 @@ function App() {
                 <th>الهاتف</th>
                 <th>الدور</th>
                 <th>الفرع</th>
+                <th>اللغات والمستويات</th>
                 <th>الحالة</th>
                 <th>تغيير الحالة</th>
                 <th>رسالة ادارية</th>
@@ -610,6 +680,13 @@ function App() {
                     <td>{user.phone}</td>
                     <td>{roleLabel[user.role]}</td>
                     <td>{branchNameById[branchId] || branchId}</td>
+                    <td>
+                      {(user.languages || []).length > 0
+                        ? (user.languages || [])
+                            .map((item) => `${item.language} (${item.level})`)
+                            .join(' - ')
+                        : '-'}
+                    </td>
                     <td>{statusLabel[user.status]}</td>
                     <td>
                       <select
@@ -664,7 +741,7 @@ function App() {
               })}
               {users.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="empty-cell">
+                  <td colSpan={8} className="empty-cell">
                     لا يوجد مستخدمون في هذا التبويب
                   </td>
                 </tr>
@@ -678,6 +755,41 @@ function App() {
         <div className="panel-head">
           <h2>تحليلات الحضور</h2>
           <div className="filters">
+            {role === 'super_admin' && (
+              <select
+                value={analyticsBranchId}
+                onChange={(event) => setAnalyticsBranchId(event.target.value)}
+              >
+                <option value="">كل الفروع</option>
+                {branches.map((branch) => (
+                  <option key={branch._id} value={branch._id}>
+                    {branch.name.ar} ({branch.code})
+                  </option>
+                ))}
+              </select>
+            )}
+            <select
+              value={selectedLanguage}
+              onChange={(event) => setSelectedLanguage(event.target.value)}
+            >
+              <option value="">كل اللغات</option>
+              {languageOptions.map((language) => (
+                <option key={language} value={language}>
+                  {language}
+                </option>
+              ))}
+            </select>
+            <select
+              value={selectedLevel}
+              onChange={(event) => setSelectedLevel(event.target.value)}
+            >
+              <option value="">كل المستويات</option>
+              {levelOptions.map((level) => (
+                <option key={level} value={level}>
+                  {level}
+                </option>
+              ))}
+            </select>
             <input
               type="number"
               min={2020}

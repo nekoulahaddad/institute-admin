@@ -18,6 +18,7 @@ type User = {
   role: UserRole;
   status: UserStatus;
   branchId: string | Branch;
+  adminMessage?: string | null;
 };
 
 type ReportMap = Record<string, number>;
@@ -162,6 +163,7 @@ function App() {
   const [activeStatus, setActiveStatus] = useState<UserStatus>('pending');
   const [users, setUsers] = useState<User[]>([]);
   const [scopedUsers, setScopedUsers] = useState<User[]>([]);
+  const [messageDrafts, setMessageDrafts] = useState<Record<string, string>>({});
   const [search, setSearch] = useState('');
   const [selectedBranchId, setSelectedBranchId] = useState('');
   const [selectedUserId, setSelectedUserId] = useState('');
@@ -172,6 +174,7 @@ function App() {
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [pageError, setPageError] = useState('');
   const [updatingUserId, setUpdatingUserId] = useState('');
+  const [savingMessageUserId, setSavingMessageUserId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const role = currentUser?.role || jwtPayload?.role;
@@ -257,6 +260,18 @@ function App() {
   useEffect(() => {
     loadScopedUsers().catch((error) => setPageError(getErrorMessage(error)));
   }, [loadScopedUsers]);
+
+  useEffect(() => {
+    setMessageDrafts((previous) => {
+      const next = { ...previous };
+      users.forEach((user) => {
+        if (!(user._id in next)) {
+          next[user._id] = user.adminMessage || '';
+        }
+      });
+      return next;
+    });
+  }, [users]);
 
   useEffect(() => {
     if (!selectedUserId) return;
@@ -453,6 +468,33 @@ function App() {
     }
   };
 
+  const handleMessageSave = async (userId: string, overrideMessage?: string) => {
+    if (!token) return;
+    setSavingMessageUserId(userId);
+    setPageError('');
+
+    try {
+      await apiRequest(
+        `users/${userId}/admin-message`,
+        {
+          method: 'PATCH',
+          body: JSON.stringify({
+            adminMessage:
+              overrideMessage !== undefined
+                ? overrideMessage
+                : messageDrafts[userId] || '',
+          }),
+        },
+        token,
+      );
+      await Promise.all([loadUsersByStatus(), loadScopedUsers()]);
+    } catch (error) {
+      setPageError(getErrorMessage(error));
+    } finally {
+      setSavingMessageUserId('');
+    }
+  };
+
   if (!token || !jwtPayload) {
     return (
       <main className="login-layout">
@@ -556,6 +598,7 @@ function App() {
                 <th>الفرع</th>
                 <th>الحالة</th>
                 <th>تغيير الحالة</th>
+                <th>رسالة ادارية</th>
               </tr>
             </thead>
             <tbody>
@@ -581,12 +624,47 @@ function App() {
                         ))}
                       </select>
                     </td>
+                    <td>
+                      <div className="message-actions">
+                        <input
+                          value={messageDrafts[user._id] ?? user.adminMessage ?? ''}
+                          onChange={(event) =>
+                            setMessageDrafts((previous) => ({
+                              ...previous,
+                              [user._id]: event.target.value,
+                            }))
+                          }
+                          placeholder="اكتب رسالة للمستخدم"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleMessageSave(user._id)}
+                          disabled={savingMessageUserId === user._id}
+                        >
+                          حفظ
+                        </button>
+                        <button
+                          type="button"
+                          className="ghost danger"
+                          onClick={() => {
+                            setMessageDrafts((previous) => ({
+                              ...previous,
+                              [user._id]: '',
+                            }));
+                            handleMessageSave(user._id, '');
+                          }}
+                          disabled={savingMessageUserId === user._id}
+                        >
+                          حذف
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 );
               })}
               {users.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="empty-cell">
+                  <td colSpan={7} className="empty-cell">
                     لا يوجد مستخدمون في هذا التبويب
                   </td>
                 </tr>
@@ -618,7 +696,7 @@ function App() {
               <option value="">كل المستخدمين</option>
               {scopedUsers.map((user) => (
                 <option key={user._id} value={user._id}>
-                  {user.arabicName || user.englishName}
+                  {(user.arabicName || user.englishName) + ' - ' + user.phone}
                 </option>
               ))}
             </select>

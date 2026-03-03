@@ -30,6 +30,22 @@ type User = {
 type ReportMap = Record<string, number>;
 type JwtPayload = { sub: string; role: UserRole };
 
+type ActiveUser = {
+  _id: string;
+  arabicName: string;
+  englishName: string;
+  phone: string;
+  role: UserRole;
+  branchId: string;
+  lastScannedAt: string;
+};
+
+type ActiveUsersByRole = {
+  teachers: ActiveUser[];
+  students: ActiveUser[];
+  employees: ActiveUser[];
+};
+
 const API_BASE_URL =
   process.env.REACT_APP_API_BASE_URL?.replace(/\/$/, '') ||
   'http://localhost:5000';
@@ -174,6 +190,13 @@ function App() {
   const [selectedBranchId, setSelectedBranchId] = useState('');
   const [analyticsBranchId, setAnalyticsBranchId] = useState('');
   const [analyticsRole, setAnalyticsRole] = useState('');
+  const [activeNowBranchId, setActiveNowBranchId] = useState('');
+  const [activeNowUsers, setActiveNowUsers] = useState<ActiveUsersByRole>({
+    teachers: [],
+    students: [],
+    employees: [],
+  });
+  const [activeNowLoading, setActiveNowLoading] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState('');
   const [year, setYear] = useState(defaultYear);
   const [month, setMonth] = useState(defaultMonth);
@@ -198,6 +221,12 @@ function App() {
     if (currentUser.role === 'admin') return getBranchId(currentUser);
     return analyticsBranchId;
   }, [analyticsBranchId, currentUser]);
+
+  const getActiveNowBranchId = useCallback((): string => {
+    if (!currentUser) return activeNowBranchId;
+    if (currentUser.role === 'admin') return getBranchId(currentUser);
+    return activeNowBranchId;
+  }, [activeNowBranchId, currentUser]);
 
   const branchNameById = useMemo(
     () =>
@@ -257,9 +286,11 @@ function App() {
           const myBranchId = getBranchId(me);
           setSelectedBranchId(myBranchId);
           setAnalyticsBranchId(myBranchId);
+          setActiveNowBranchId(myBranchId);
         } else {
           setSelectedBranchId('');
           setAnalyticsBranchId('');
+          setActiveNowBranchId('');
         }
       })
       .catch((error) => {
@@ -297,6 +328,29 @@ function App() {
       setSelectedUserId('');
     }
   }, [scopedUsers, selectedUserId]);
+
+  useEffect(() => {
+    if (!token || !currentUser) return;
+
+    const params = new URLSearchParams();
+    const scopedBranch = getActiveNowBranchId();
+    if (scopedBranch) params.set('branchId', scopedBranch);
+
+    setActiveNowLoading(true);
+    apiRequest<ActiveUsersByRole>(`reports/active-now?${params.toString()}`, undefined, token)
+      .then((data) => {
+        const excludeMe = (items: ActiveUser[]) =>
+          items.filter((item) => item._id !== currentUser._id);
+
+        setActiveNowUsers({
+          teachers: excludeMe(data.teachers || []),
+          students: excludeMe(data.students || []),
+          employees: excludeMe(data.employees || []),
+        });
+      })
+      .catch((error) => setPageError(getErrorMessage(error)))
+      .finally(() => setActiveNowLoading(false));
+  }, [currentUser, getActiveNowBranchId, token]);
 
   useEffect(() => {
     if (!token) return;
@@ -513,6 +567,12 @@ function App() {
     }
   };
 
+  const formatActiveTime = (value: string) =>
+    new Date(value).toLocaleTimeString('ar-EG', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
   if (!token || !jwtPayload) {
     return (
       <main className="login-layout">
@@ -697,6 +757,67 @@ function App() {
               )}
             </tbody>
           </table>
+        </div>
+      </section>
+
+      <section className="panel">
+        <div className="panel-head">
+          <h2>المستخدمون المتواجدون الان</h2>
+          <div className="filters">
+            {role === 'super_admin' && (
+              <select
+                value={activeNowBranchId}
+                onChange={(event) => setActiveNowBranchId(event.target.value)}
+              >
+                <option value="">كل الفروع</option>
+                {branches.map((branch) => (
+                  <option key={branch._id} value={branch._id}>
+                    {branch.name.ar} ({branch.code})
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+        </div>
+
+        {activeNowLoading && <p className="loading">جاري تحميل المستخدمين المتواجدين...</p>}
+
+        <div className="active-now-grid">
+          <article className="active-now-column employees-col">
+            <h3>الموظفون</h3>
+            {activeNowUsers.employees.length === 0 && <p className="empty">لا يوجد حاليا</p>}
+            {activeNowUsers.employees.map((user) => (
+              <div className="active-user-card" key={user._id}>
+                <strong>{user.arabicName || user.englishName}</strong>
+                <span>{user.phone}</span>
+                <small>اخر دخول: {formatActiveTime(user.lastScannedAt)}</small>
+              </div>
+            ))}
+          </article>
+
+          <article className="active-now-column students-col">
+            <h3>الطلاب</h3>
+            {activeNowUsers.students.length === 0 && <p className="empty">لا يوجد حاليا</p>}
+            {activeNowUsers.students.map((user) => (
+              <div className="active-user-card" key={user._id}>
+                <strong>{user.arabicName || user.englishName}</strong>
+                <span>{user.phone}</span>
+                <small>اخر دخول: {formatActiveTime(user.lastScannedAt)}</small>
+              </div>
+            ))}
+          </article>
+
+          <article className="active-now-column teachers-col">
+            <h3>المدرسون</h3>
+            {activeNowUsers.teachers.length === 0 && <p className="empty">لا يوجد حاليا</p>}
+            {activeNowUsers.teachers.map((user) => (
+              <div className="active-user-card" key={user._id}>
+                <strong>{user.arabicName || user.englishName}</strong>
+                <span>{user.phone}</span>
+                <small>اخر دخول: {formatActiveTime(user.lastScannedAt)}</small>
+              </div>
+            ))}
+          </article>
         </div>
       </section>
 

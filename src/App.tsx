@@ -616,7 +616,7 @@ function App() {
           <h1>لوحة ادارة المعهد</h1>
           <p>
             الصلاحية: <strong>{role ? roleLabel[role] : '-'}</strong>
-            {currentUser && (
+            {currentUser && role !== 'super_admin' && (
               <>
                 {' | '}
                 الفرع: <strong>{branchNameById[getBranchId(currentUser)] || getBranchId(currentUser)}</strong>

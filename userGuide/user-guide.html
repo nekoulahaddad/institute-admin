@@ -1,0 +1,384 @@
+﻿<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>دليل استخدام نظام إدارة المعهد</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --line: #d9e3ef;
+      --text: #122033;
+      --muted: #5e6b7d;
+      --main: #0f4e8a;
+      --soft: #e6f1ff;
+      --ok: #188754;
+      --warn: #d89b00;
+      --bad: #b4233d;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 24px;
+      font-family: "Tahoma", "Arial", sans-serif;
+      background: radial-gradient(circle at top right, #dcebff 0%, var(--bg) 42%);
+      color: var(--text);
+      line-height: 1.8;
+    }
+
+    .page {
+      max-width: 1000px;
+      margin: 0 auto;
+      display: grid;
+      gap: 18px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 18px;
+    }
+
+    h1, h2, h3, p, ul, li { margin: 0; }
+
+    h1 { font-size: 28px; color: var(--main); }
+    h2 { font-size: 22px; color: var(--main); margin-bottom: 10px; }
+    h3 { font-size: 18px; margin-bottom: 8px; }
+
+    .muted { color: var(--muted); }
+
+    .grid-two {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .list { display: grid; gap: 7px; padding-right: 20px; }
+
+    .note {
+      border-right: 5px solid var(--main);
+      background: #f0f7ff;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 15px;
+    }
+
+    .block {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fbfdff;
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .mock-title {
+      font-size: 14px;
+      color: var(--muted);
+      font-weight: bold;
+      border-bottom: 1px dashed var(--line);
+      padding-bottom: 6px;
+    }
+
+    .row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .pill {
+      background: var(--soft);
+      color: var(--main);
+      border: 1px solid #cfe2ff;
+      border-radius: 999px;
+      padding: 2px 10px;
+      font-size: 13px;
+    }
+
+    .field {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 8px;
+      padding: 8px;
+      font-size: 14px;
+    }
+
+    .btn {
+      background: var(--main);
+      color: #fff;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 14px;
+      display: inline-block;
+    }
+
+    .kpi {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      padding: 10px;
+      min-width: 140px;
+    }
+
+    .kpi strong { font-size: 22px; display: block; }
+
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    .table th, .table td {
+      border-bottom: 1px solid var(--line);
+      padding: 8px;
+      text-align: right;
+    }
+
+    .status-ok { color: var(--ok); font-weight: bold; }
+    .status-warn { color: var(--warn); font-weight: bold; }
+    .status-bad { color: var(--bad); font-weight: bold; }
+
+    .cards3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .mini {
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      padding: 8px;
+      background: #fff;
+      font-size: 14px;
+    }
+
+    .chart {
+      display: grid;
+      gap: 7px;
+    }
+
+    .bar-line {
+      display: grid;
+      gap: 5px;
+    }
+
+    .track {
+      background: #e8eef7;
+      border-radius: 999px;
+      height: 8px;
+      overflow: hidden;
+    }
+
+    .fill {
+      height: 8px;
+      background: linear-gradient(90deg, #1a66ae, #2a9cb0);
+    }
+
+    .steps { display: grid; gap: 8px; }
+
+    .step {
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: #fff;
+      padding: 10px;
+    }
+
+    @media (max-width: 860px) {
+      .grid-two, .cards3 { grid-template-columns: 1fr; }
+      body { padding: 14px; }
+    }
+
+    @media print {
+      body { background: #fff; padding: 0; }
+      .card { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="card">
+      <h1>دليل استخدام نظام إدارة المعهد</h1>
+    </section>
+
+    <section class="card">
+      <h2>١) ماذا يفعل النظام؟</h2>
+      <ul class="list">
+        <li>يسمح لك بتسجيل الدخول بحساب الإدارة.</li>
+        <li>يعرض المستخدمين حسب الحالة: معلق، مقبول، مرفوض.</li>
+        <li>يسمح بتغيير حالة أي مستخدم.</li>
+        <li>يسمح بكتابة رسالة إدارية للمستخدم وحفظها أو حذفها.</li>
+        <li>يعرض المستخدمين المتواجدين الآن (موظفون، طلاب، مدرسون).</li>
+        <li>يعرض تحليلات الحضور: عدد الجلسات، عدد الساعات، والتوزيعات.</li>
+        <li>يوجد فلاتر حسب الفرع، الدور، الشهر، السنة، أو مستخدم محدد.</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>٢) شاشة تسجيل الدخول</h2>
+      <div class="grid-two">
+        <div>
+          <h3>الشرح</h3>
+          <ul class="list">
+            <li>اكتب رقم الهاتف .</li>
+            <li>اكتب كلمة المرور.</li>
+            <li>اضغط زر: تسجيل الدخول.</li>
+            <li>إذا كانت البيانات غير صحيحة ستظهر رسالة خطأ.</li>
+          </ul>
+        </div>
+        <div class="block">
+          <div class="mock-title">بلوك من شاشة تسجيل الدخول</div>
+          <div class="field">اسم المستخدم أو الهاتف</div>
+          <div class="field">كلمة المرور</div>
+          <div class="btn">تسجيل الدخول</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>٣) لوحة المستخدمين</h2>
+      <div class="grid-two">
+        <div>
+          <h3>الشرح</h3>
+          <ul class="list">
+            <li>يمكنك البحث باسم المستخدم أو رقم الهاتف.</li>
+            <li>يمكنك اختيار تبويب الحالة: معلق، مقبول، مرفوض.</li>
+            <li>يمكنك تغيير الحالة من القائمة داخل كل صف.</li>
+            <li>يمكنك إضافة رسالة إدارية للمستخدم ثم حفظها.</li>
+            <li>يمكنك حذف الرسالة الإدارية من زر حذف.</li>
+          </ul>
+        </div>
+        <div class="block">
+          <div class="mock-title">بلوك من جدول المستخدمين</div>
+          <div class="row">
+            <span class="pill">بحث بالاسم أو الهاتف</span>
+            <span class="pill">معلق</span>
+            <span class="pill">مقبول</span>
+            <span class="pill">مرفوض</span>
+          </div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>الاسم</th>
+                <th>الهاتف</th>
+                <th>الدور</th>
+                <th>الحالة</th>
+                <th>تغيير الحالة</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>أحمد علي</td>
+                <td>٠١٠٠٠٠٠٠٠٠٠</td>
+                <td>طالب</td>
+                <td class="status-warn">معلق</td>
+                <td>قائمة اختيار</td>
+              </tr>
+              <tr>
+                <td>سارة محمد</td>
+                <td>٠١١١١١١١١١١</td>
+                <td>مدرس</td>
+                <td class="status-ok">مقبول</td>
+                <td>قائمة اختيار</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="row">
+            <div class="field" style="flex:1">اكتب رسالة للمستخدم</div>
+            <span class="btn">حفظ</span>
+            <span class="btn" style="background:#b4233d">حذف</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>٤) قسم المتواجدين الآن</h2>
+      <div class="grid-two">
+        <div>
+          <h3>الشرح</h3>
+          <ul class="list">
+            <li>هذا القسم يعرض الأشخاص الموجودين الآن داخل النظام.</li>
+            <li>التقسيم يكون إلى: موظفين، طلاب، مدرسين.</li>
+            <li>كل بطاقة تعرض الاسم والهاتف وآخر وقت دخول.</li>
+            <li>يمكن للمسؤول العام التصفية حسب الفرع.</li>
+          </ul>
+        </div>
+        <div class="block">
+          <div class="mock-title">بلوك من شاشة المتواجدين الآن</div>
+          <div class="cards3">
+            <div class="mini"><strong>الموظفون</strong><br>أحمد سمير<br><span class="muted">آخر دخول: ١٠:٣٠</span></div>
+            <div class="mini"><strong>الطلاب</strong><br>ملك خالد<br><span class="muted">آخر دخول: ١٠:٢٨</span></div>
+            <div class="mini"><strong>المدرسون</strong><br>محمد سالم<br><span class="muted">آخر دخول: ١٠:٢٥</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>٥) قسم تحليلات الحضور</h2>
+      <div class="grid-two">
+        <div>
+          <h3>الشرح</h3>
+          <ul class="list">
+            <li>يمكنك اختيار الفرع والدور والشهر والسنة.</li>
+            <li>يمكنك اختيار مستخدم محدد أو عرض كل المستخدمين.</li>
+            <li>تظهر لك مؤشرات مهمة: عدد المستخدمين، إجمالي الجلسات، إجمالي الساعات.</li>
+            <li>تظهر رسوم توضيحية لأعلى المستخدمين وتوزيع الحالات والأدوار.</li>
+          </ul>
+        </div>
+        <div class="block">
+          <div class="mock-title">بلوك من شاشة التحليلات</div>
+          <div class="row">
+            <span class="pill">اختيار الفرع</span>
+            <span class="pill">اختيار الدور</span>
+            <span class="pill">اختيار السنة</span>
+            <span class="pill">اختيار الشهر</span>
+          </div>
+          <div class="row">
+            <div class="kpi"><span class="muted">عدد المستخدمين</span><strong>٤٥</strong></div>
+            <div class="kpi"><span class="muted">إجمالي الجلسات</span><strong>١٢٨</strong></div>
+            <div class="kpi"><span class="muted">إجمالي الساعات</span><strong>٢٧٦</strong></div>
+          </div>
+          <div class="chart">
+            <div class="bar-line">
+              <div class="muted">أعلى الجلسات</div>
+              <div class="track"><div class="fill" style="width:92%"></div></div>
+            </div>
+            <div class="bar-line">
+              <div class="muted">أعلى الساعات</div>
+              <div class="track"><div class="fill" style="width:75%"></div></div>
+            </div>
+            <div class="bar-line">
+              <div class="muted">توزيع الحالات</div>
+              <div class="track"><div class="fill" style="width:58%"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>٦) خطوات الاستخدام اليومية</h2>
+      <div class="steps">
+        <div class="step">١. سجّل الدخول بحساب الإدارة.</div>
+        <div class="step">٢. افتح قسم المستخدمين لمراجعة طلبات التسجيل.</div>
+        <div class="step">٣. غيّر الحالة إلى مقبول أو مرفوض حسب القرار.</div>
+        <div class="step">٤. أضف رسالة إدارية عند الحاجة ثم اضغط حفظ.</div>
+        <div class="step">٥. راقب قسم المتواجدين الآن لمعرفة النشاط الحالي.</div>
+        <div class="step">٦. افتح التحليلات لمراجعة الأداء حسب الشهر والفرع.</div>
+        <div class="step">٧. في نهاية العمل اضغط تسجيل الخروج.</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>٧) ملاحظات مهمة</h2>
+      <ul class="list">
+        <li>المسؤول العام يمكنه عرض كل الفروع.</li>
+        <li>المسؤول العادي يعمل على فرعه فقط.</li>
+        <li>إذا لم تظهر بيانات، راجع الفلاتر (الفرع أو الشهر أو الدور).</li>
+        <li>عند وجود مشكلة في الدخول، تأكد من رقم الهاتف وكلمة المرور.</li>
+      </ul>
+    </section>
+  </div>
+</body>
+</html>

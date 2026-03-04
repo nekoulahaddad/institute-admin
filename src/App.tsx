@@ -578,10 +578,10 @@ function App() {
       <main className="login-layout">
         <form className="login-card" onSubmit={handleLogin}>
           <h1>نظام ادارة المعهد</h1>
-          <p>تسجيل دخول الادمن او السوبر ادمن</p>
+          <p>تسجيل دخول الادمن</p>
 
           <label>
-            اسم المستخدم او الهاتف
+            الهاتف
             <input
               value={phone}
               onChange={(event) => setPhone(event.target.value)}
